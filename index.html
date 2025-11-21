@@ -12,7 +12,7 @@
 	<header class="app-header">
 		<h1>Workout Tracker</h1>
 		<div class="auth-controls">
-			<span id="userLabel" class="muted"></span>
+			<span id="userLabel" class="muted">Not signed in</span>
 			<button id="signInBtn" class="btn small">Sign in</button>
 			<button id="signOutBtn" class="btn small" style="display:none">Sign out</button>
 		</div>
@@ -100,6 +100,7 @@
 		<small id="dataNote">Data is saved on this device only.</small>
 	</footer>
 
+	<div id="toast" class="toast" aria-live="polite"></div>
 	<script type="module" src="firebase.js"></script>
 	<script src="app.js"></script>
 </body>

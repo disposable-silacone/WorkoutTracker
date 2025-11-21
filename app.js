@@ -31,6 +31,30 @@
 	let editingId = null;
 	let useCloud = false;
 	let cloudItems = [];
+	let toastTimer = null;
+
+	function showToast(message) {
+		const el = document.getElementById('toast');
+		if (!el) return;
+		el.textContent = message;
+		el.classList.add('show');
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => {
+			el.classList.remove('show');
+		}, 2500);
+	}
+
+	function friendlyAuthError(err) {
+		const code = err && (err.code || err.message || '');
+		if (typeof code === 'string') {
+			if (code.includes('auth/unauthorized-domain')) return 'Auth domain not authorized. Add your GitHub Pages domain in Firebase → Authentication → Settings.';
+			if (code.includes('auth/popup-blocked')) return 'Popup blocked. Allow popups for this site and try again.';
+			if (code.includes('auth/popup-closed-by-user')) return 'Sign-in canceled.';
+			if (code.includes('auth/cancelled-popup-request')) return 'Another sign-in is in progress.';
+			if (code.includes('network')) return 'Network error. Check your connection and try again.';
+		}
+		return 'Sign-in failed. Please try again.';
+	}
 
 	function formatDateToInput(date) {
 		const y = date.getFullYear();
@@ -309,8 +333,13 @@
 				useCloud = true;
 				if (signInBtn) signInBtn.style.display = 'none';
 				if (signOutBtn) signOutBtn.style.display = '';
-				if (userLabel) userLabel.textContent = user.email || user.displayName || '';
+				if (userLabel) {
+					const label = user.email || user.displayName || 'Signed in';
+					userLabel.textContent = `Signed in as ${label}`;
+					userLabel.classList.remove('muted');
+				}
 				if (dataNote) dataNote.textContent = 'Data sync is ON (private to your account).';
+				showToast('Signed in');
 
 				svc.subscribeEntries((items) => {
 					cloudItems = items || [];
@@ -330,24 +359,47 @@
 				useCloud = false;
 				if (signInBtn) signInBtn.style.display = '';
 				if (signOutBtn) signOutBtn.style.display = 'none';
-				if (userLabel) userLabel.textContent = '';
+				if (userLabel) {
+					userLabel.textContent = 'Not signed in';
+					userLabel.classList.add('muted');
+				}
 				if (dataNote) dataNote.textContent = 'Data is saved on this device only.';
+				showToast('Signed out');
 				render();
 			}
 		});
 	}
 
 	// Always wire button clicks; they will no-op if firebase not ready yet
-	signInBtn?.addEventListener('click', () => {
+	signInBtn?.addEventListener('click', async () => {
 		const svc = window.firebaseService;
 		if (svc?.signIn) {
-			svc.signIn();
+			try {
+				signInBtn.classList.add('loading');
+				signInBtn.disabled = true;
+				const prev = signInBtn.textContent;
+				signInBtn.textContent = 'Signing in…';
+				await svc.signIn();
+				// onAuthStateChanged will handle UI
+				signInBtn.textContent = prev || 'Sign in';
+			} catch (err) {
+				showToast(friendlyAuthError(err));
+			} finally {
+				signInBtn.classList.remove('loading');
+				signInBtn.disabled = false;
+			}
 		} else {
-			alert('Sign-in is still loading. Please try again in a moment.');
+			showToast('Sign-in is loading. Try again in a moment.');
 		}
 	});
 	signOutBtn?.addEventListener('click', () => {
-		window.firebaseService?.signOut?.();
+		if (!window.firebaseService?.signOut) return;
+		signOutBtn.classList.add('loading');
+		signOutBtn.disabled = true;
+		window.firebaseService.signOut().catch(() => {}).finally(() => {
+			signOutBtn.classList.remove('loading');
+			signOutBtn.disabled = false;
+		});
 	});
 
 	// Bind immediately if ready, or when firebase signals readiness
