@@ -82,7 +82,10 @@ async function initFirebase() {
 
 // Initialize on load and attach to window
 initFirebase().then((svc) => {
-	if (svc) window.firebaseService = svc;
+	if (svc) {
+		window.firebaseService = svc;
+		window.dispatchEvent(new Event('firebase-ready'));
+	}
 });
 
 export {};

@@ -301,48 +301,58 @@
 	render();
 
 	// Optional Firebase auth/sync
-	if (window.firebaseService) {
-		signInBtn?.addEventListener('click', () => window.firebaseService.signIn());
-		signOutBtn?.addEventListener('click', () => window.firebaseService.signOut());
-		window.firebaseService.onAuthStateChanged(async (user) => {
+	function bindFirebaseAuth() {
+		const svc = window.firebaseService;
+		if (!svc || !svc.onAuthStateChanged) return;
+		svc.onAuthStateChanged(async (user) => {
 			if (user) {
 				useCloud = true;
-				signInBtn.style.display = 'none';
-				signOutBtn.style.display = '';
-				userLabel.textContent = user.email || user.displayName || '';
-				dataNote.textContent = 'Data sync is ON (private to your account).';
+				if (signInBtn) signInBtn.style.display = 'none';
+				if (signOutBtn) signOutBtn.style.display = '';
+				if (userLabel) userLabel.textContent = user.email || user.displayName || '';
+				if (dataNote) dataNote.textContent = 'Data sync is ON (private to your account).';
 
-				// Subscribe to cloud changes
-				window.firebaseService.subscribeEntries((items) => {
+				svc.subscribeEntries((items) => {
 					cloudItems = items || [];
 					emptyStateEl.style.display = cloudItems.length ? 'none' : 'block';
 					render();
 				});
 
-				// One-time suggestion to upload local entries if cloud empty
 				const local = readStore();
 				setTimeout(() => {
 					if (local.length && (!cloudItems || cloudItems.length === 0)) {
 						if (confirm('Upload your existing local entries to cloud?')) {
-							for (const it of local) window.firebaseService.upsertEntry(it);
+							for (const it of local) svc.upsertEntry(it);
 						}
 					}
 				}, 500);
 			} else {
 				useCloud = false;
-				signInBtn.style.display = '';
-				signOutBtn.style.display = 'none';
-				userLabel.textContent = '';
-				dataNote.textContent = 'Data is saved on this device only.';
+				if (signInBtn) signInBtn.style.display = '';
+				if (signOutBtn) signOutBtn.style.display = 'none';
+				if (userLabel) userLabel.textContent = '';
+				if (dataNote) dataNote.textContent = 'Data is saved on this device only.';
 				render();
 			}
 		});
-	} else {
-		// Hide auth controls if firebase not configured
-		signInBtn?.style && (signInBtn.style.display = 'none');
-		signOutBtn?.style && (signOutBtn.style.display = 'none');
-		userLabel && (userLabel.textContent = '');
 	}
+
+	// Always wire button clicks; they will no-op if firebase not ready yet
+	signInBtn?.addEventListener('click', () => {
+		const svc = window.firebaseService;
+		if (svc?.signIn) {
+			svc.signIn();
+		} else {
+			alert('Sign-in is still loading. Please try again in a moment.');
+		}
+	});
+	signOutBtn?.addEventListener('click', () => {
+		window.firebaseService?.signOut?.();
+	});
+
+	// Bind immediately if ready, or when firebase signals readiness
+	if (window.firebaseService) bindFirebaseAuth();
+	window.addEventListener('firebase-ready', bindFirebaseAuth);
 
 	// Optional: register service worker when served over http(s)
 	if ('serviceWorker' in navigator) {
