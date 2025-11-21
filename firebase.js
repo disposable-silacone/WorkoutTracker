@@ -17,7 +17,7 @@ async function initFirebase() {
 		if (!firebaseConfig) return null;
 
 		// Import Firebase SDK (modular)
-		const [{ initializeApp }, { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut }, {
+		const [{ initializeApp }, { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut }, {
 			getFirestore, enableIndexedDbPersistence, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy
 		}] = await Promise.all([
 			import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
@@ -51,8 +51,28 @@ async function initFirebase() {
 
 		const provider = new GoogleAuthProvider();
 
+		// Handle redirect results (if a previous popup fallback redirected)
+		getRedirectResult(getAuth()).catch((err) => {
+			console.error('Firebase redirect sign-in error', err);
+		});
+
 		firebaseService = {
-			signIn: () => signInWithPopup(auth, provider),
+			signIn: async () => {
+				try {
+					return await signInWithPopup(auth, provider);
+				} catch (err) {
+					// Fallback to redirect for environments that block popups
+					const code = err && err.code ? String(err.code) : '';
+					const shouldRedirect = code.includes('popup') ||
+						code.includes('operation-not-supported') ||
+						code.includes('browser-session-persistent-configuration-unsupported');
+					if (shouldRedirect) {
+						await signInWithRedirect(auth, provider);
+						return;
+					}
+					throw err;
+				}
+			},
 			signOut: () => signOut(auth),
 			onAuthStateChanged: (cb) => onAuthStateChanged(auth, (user) => cb(user || null)),
 			subscribeEntries: (cb) => {

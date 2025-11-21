@@ -51,9 +51,11 @@
 			if (code.includes('auth/popup-blocked')) return 'Popup blocked. Allow popups for this site and try again.';
 			if (code.includes('auth/popup-closed-by-user')) return 'Sign-in canceled.';
 			if (code.includes('auth/cancelled-popup-request')) return 'Another sign-in is in progress.';
+			if (code.includes('auth/operation-not-allowed')) return 'Google sign-in is not enabled. Enable Google provider in Firebase → Authentication → Sign-in method.';
+			if (code.includes('auth/cookie-not-supported')) return 'Browser cookies are disabled or blocked. Enable cookies for this site.';
 			if (code.includes('network')) return 'Network error. Check your connection and try again.';
 		}
-		return 'Sign-in failed. Please try again.';
+		return `Sign-in failed. ${code || ''}`.trim();
 	}
 
 	function formatDateToInput(date) {
@@ -383,6 +385,7 @@
 				// onAuthStateChanged will handle UI
 				signInBtn.textContent = prev || 'Sign in';
 			} catch (err) {
+				console.error('Sign-in error', err);
 				showToast(friendlyAuthError(err));
 			} finally {
 				signInBtn.classList.remove('loading');
