@@ -21,14 +21,25 @@ html, body {
 }
 
 .app-header, .app-footer {
-	text-align: center;
 	padding: 16px;
+}
+.app-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
 }
 .app-header h1 {
 	margin: 0;
 	font-size: 1.5rem;
 	letter-spacing: 0.5px;
 }
+.auth-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.muted { color: var(--muted); }
 .app-footer small {
 	color: var(--muted);
 }
@@ -86,7 +97,7 @@ textarea {
 	color: var(--text);
 	border: 1px solid var(--border);
 	border-radius: 10px;
-	padding: 10px 12px;
+	padding: 12px 14px;
 	outline: none;
 	box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
@@ -106,12 +117,19 @@ textarea { resize: vertical; }
 	gap: 8px;
 	margin-top: 12px;
 }
+.actions.sticky {
+	position: sticky;
+	bottom: 0;
+	padding-top: 8px;
+	background: linear-gradient(180deg, rgba(20,32,57,0), rgba(20,32,57,0.9) 40%, rgba(20,32,57,1));
+	border-top: 1px solid var(--border);
+}
 .btn {
 	background: transparent;
 	color: var(--text);
 	border: 1px solid var(--border);
 	border-radius: 10px;
-	padding: 10px 12px;
+	padding: 12px 14px;
 	cursor: pointer;
 }
 .btn:hover { border-color: #314368; }
@@ -130,6 +148,41 @@ textarea { resize: vertical; }
 }
 .file-btn input[type="file"] {
 	display: none;
+}
+
+.chips {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 6px;
+}
+.chip {
+	border-radius: 999px;
+	border: 1px solid var(--border);
+	background: rgba(255,255,255,0.02);
+	color: var(--text);
+	padding: 6px 10px;
+	cursor: pointer;
+}
+.chip:hover { border-color: #314368; }
+.pain-output {
+	display: inline-block;
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin-left: 6px;
+	color: #a9f1e8;
+}
+.pace-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.pace-row .sep, .pace-row .unit {
+	color: var(--muted);
+}
+.pace-row input[type="number"] {
+	width: 100%;
+	max-width: 110px;
 }
 
 .list-header {

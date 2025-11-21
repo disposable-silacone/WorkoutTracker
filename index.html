@@ -11,6 +11,11 @@
 <body>
 	<header class="app-header">
 		<h1>Workout Tracker</h1>
+		<div class="auth-controls">
+			<span id="userLabel" class="muted"></span>
+			<button id="signInBtn" class="btn small">Sign in</button>
+			<button id="signOutBtn" class="btn small" style="display:none">Sign out</button>
+		</div>
 	</header>
 
 	<main class="container">
@@ -21,14 +26,23 @@
 					<label class="field">
 						<span>Date</span>
 						<input type="date" id="date" required>
+						<div class="chips">
+							<button type="button" id="todayBtn" class="chip">Today</button>
+							<button type="button" id="yesterdayBtn" class="chip">Yesterday</button>
+						</div>
 					</label>
 					<label class="field">
 						<span>Distance (miles)</span>
 						<input type="number" id="distance" step="0.01" min="0" inputmode="decimal" placeholder="e.g., 3.25" required>
 					</label>
 					<label class="field">
-						<span>Avg Pace (min:sec/mi)</span>
-						<input type="text" id="pace" inputmode="numeric" placeholder="e.g., 9:30/mi">
+						<span>Avg Pace</span>
+						<div class="pace-row">
+							<input type="number" id="paceMin" min="0" step="1" inputmode="numeric" placeholder="min">
+							<span class="sep">:</span>
+							<input type="number" id="paceSec" min="0" max="59" step="1" inputmode="numeric" placeholder="sec">
+							<span class="unit">/mi</span>
+						</div>
 					</label>
 					<label class="field">
 						<span>Pain start distance (mile)</span>
@@ -37,7 +51,14 @@
 					<label class="field">
 						<span>Pain level (0-10)</span>
 						<input type="range" id="painLevel" min="0" max="10" value="0">
-						<output id="painLevelValue" for="painLevel">0</output>
+						<output id="painLevelValue" for="painLevel" class="pain-output">0</output>
+						<div class="chips">
+							<button type="button" class="chip pain-chip" data-level="0">0</button>
+							<button type="button" class="chip pain-chip" data-level="3">3</button>
+							<button type="button" class="chip pain-chip" data-level="5">5</button>
+							<button type="button" class="chip pain-chip" data-level="7">7</button>
+							<button type="button" class="chip pain-chip" data-level="10">10</button>
+						</div>
 					</label>
 					<label class="checkbox-field">
 						<input type="checkbox" id="stretched">
@@ -52,7 +73,7 @@
 					<span>Notes</span>
 					<textarea id="notes" rows="3" placeholder="Anything notable about pain, form, terrain, shoes, etc."></textarea>
 				</label>
-				<div class="actions">
+				<div class="actions sticky">
 					<button type="submit" class="btn primary">Save Entry</button>
 					<button type="button" id="clearForm" class="btn">Clear</button>
 				</div>
@@ -76,9 +97,10 @@
 	</main>
 
 	<footer class="app-footer">
-		<small>Data is saved on this device only.</small>
+		<small id="dataNote">Data is saved on this device only.</small>
 	</footer>
 
+	<script type="module" src="firebase.js"></script>
 	<script src="app.js"></script>
 </body>
 </html>

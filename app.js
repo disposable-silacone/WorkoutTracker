@@ -5,7 +5,8 @@
 	const form = document.getElementById('workout-form');
 	const dateEl = document.getElementById('date');
 	const distanceEl = document.getElementById('distance');
-	const paceEl = document.getElementById('pace');
+	const paceMinEl = document.getElementById('paceMin');
+	const paceSecEl = document.getElementById('paceSec');
 	const painStartEl = document.getElementById('painStart');
 	const painLevelEl = document.getElementById('painLevel');
 	const painLevelValueEl = document.getElementById('painLevelValue');
@@ -13,6 +14,14 @@
 	const exercisedEl = document.getElementById('exercised');
 	const notesEl = document.getElementById('notes');
 	const clearBtn = document.getElementById('clearForm');
+	const todayBtn = document.getElementById('todayBtn');
+	const yesterdayBtn = document.getElementById('yesterdayBtn');
+	const dataNote = document.getElementById('dataNote');
+
+	// Auth controls (optional, only if firebase is configured)
+	const signInBtn = document.getElementById('signInBtn');
+	const signOutBtn = document.getElementById('signOutBtn');
+	const userLabel = document.getElementById('userLabel');
 
 	const entriesEl = document.getElementById('entries');
 	const emptyStateEl = document.getElementById('emptyState');
@@ -20,12 +29,21 @@
 	const importFile = document.getElementById('importFile');
 
 	let editingId = null;
+	let useCloud = false;
+	let cloudItems = [];
 
 	function formatDateToInput(date) {
 		const y = date.getFullYear();
 		const m = String(date.getMonth() + 1).padStart(2, '0');
 		const d = String(date.getDate()).padStart(2, '0');
 		return `${y}-${m}-${d}`;
+	}
+
+	function parsePaceToParts(paceStr) {
+		if (!paceStr) return { min: '', sec: '' };
+		const m = paceStr.match(/^(\d+):(\d{1,2})/);
+		if (!m) return { min: '', sec: '' };
+		return { min: m[1], sec: m[2] };
 	}
 
 	function readStore() {
@@ -45,23 +63,32 @@
 	}
 
 	function upsertEntry(entry) {
-		const items = readStore();
-		const idx = items.findIndex(it => it.id === entry.id);
-		if (idx >= 0) {
-			items[idx] = entry;
+		if (useCloud && window.firebaseService?.upsertEntry) {
+			window.firebaseService.upsertEntry(entry);
 		} else {
-			items.push(entry);
+			const items = readStore();
+			const idx = items.findIndex(it => it.id === entry.id);
+			if (idx >= 0) {
+				items[idx] = entry;
+			} else {
+				items.push(entry);
+			}
+			writeStore(items);
 		}
-		writeStore(items);
 	}
 
 	function deleteEntry(id) {
-		const items = readStore().filter(it => it.id !== id);
-		writeStore(items);
+		if (useCloud && window.firebaseService?.deleteEntry) {
+			window.firebaseService.deleteEntry(id);
+		} else {
+			const items = readStore().filter(it => it.id !== id);
+			writeStore(items);
+		}
 	}
 
 	function render() {
-		const items = readStore().sort((a, b) => b.createdAt - a.createdAt);
+		const base = useCloud ? cloudItems : readStore();
+		const items = base.slice().sort((a, b) => b.createdAt - a.createdAt);
 		entriesEl.innerHTML = '';
 		if (items.length === 0) {
 			emptyStateEl.style.display = 'block';
@@ -139,7 +166,9 @@
 		editingId = id;
 		dateEl.value = existing.date;
 		distanceEl.value = existing.distance ?? '';
-		paceEl.value = existing.pace ?? '';
+		const parts = parsePaceToParts(existing.pace ?? '');
+		paceMinEl.value = parts.min;
+		paceSecEl.value = parts.sec;
 		painStartEl.value = existing.painStart ?? '';
 		painLevelEl.value = String(existing.painLevel ?? '0');
 		painLevelValueEl.textContent = String(existing.painLevel ?? '0');
@@ -170,6 +199,24 @@
 		painLevelValueEl.textContent = painLevelEl.value;
 	});
 
+	document.querySelectorAll('.pain-chip').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const v = btn.getAttribute('data-level');
+			if (v == null) return;
+			painLevelEl.value = v;
+			painLevelValueEl.textContent = v;
+		});
+	});
+
+	todayBtn.addEventListener('click', () => {
+		dateEl.value = formatDateToInput(new Date());
+	});
+	yesterdayBtn.addEventListener('click', () => {
+		const d = new Date();
+		d.setDate(d.getDate() - 1);
+		dateEl.value = formatDateToInput(d);
+	});
+
 	clearBtn.addEventListener('click', () => {
 		resetForm();
 	});
@@ -182,14 +229,22 @@
 			alert('Please enter a date and distance.');
 			return;
 		}
+		const pMin = paceMinEl.value === '' ? null : parseInt(paceMinEl.value, 10);
+		const pSec = paceSecEl.value === '' ? null : parseInt(paceSecEl.value, 10);
+		let pace = '';
+		if (pMin != null || pSec != null) {
+			const mm = Math.max(0, pMin ?? 0);
+			const ss = Math.max(0, Math.min(59, pSec ?? 0));
+			pace = `${mm}:${String(ss).padStart(2, '0')}/mi`;
+		}
 		const painStartRaw = painStartEl.value;
 		const painStart = painStartRaw === '' ? null : parseFloat(String(painStartRaw).replace(',', '.'));
 		const entry = {
 			id: editingId ?? `w_${Date.now()}`,
-			createdAt: editingId ? readStore().find(it => it.id === editingId)?.createdAt ?? Date.now() : Date.now(),
+			createdAt: editingId ? (useCloud ? (cloudItems.find(it => it.id === editingId)?.createdAt ?? Date.now()) : readStore().find(it => it.id === editingId)?.createdAt ?? Date.now()) : Date.now(),
 			date,
 			distance,
-			pace: paceEl.value.trim(),
+			pace,
 			painStart: painStart === null || Number.isNaN(painStart) ? null : painStart,
 			painLevel: parseInt(painLevelEl.value, 10) || 0,
 			stretched: !!stretchedEl.checked,
@@ -202,7 +257,7 @@
 	});
 
 	exportBtn.addEventListener('click', () => {
-		const items = readStore();
+		const items = useCloud ? cloudItems : readStore();
 		const stamp = new Date().toISOString().slice(0, 10);
 		download(`workouts_${stamp}.json`, JSON.stringify(items, null, 2));
 	});
@@ -217,14 +272,21 @@
 				alert('Invalid file content.');
 				return;
 			}
-			// Simple merge on id
-			const existing = readStore();
-			const byId = new Map(existing.map(x => [x.id, x]));
-			for (const item of data) {
-				if (!item || typeof item !== 'object' || !item.id) continue;
-				byId.set(item.id, item);
+			if (useCloud && window.firebaseService?.upsertEntry) {
+				for (const item of data) {
+					if (!item || typeof item !== 'object' || !item.id) continue;
+					window.firebaseService.upsertEntry(item);
+				}
+			} else {
+				// Simple merge on id
+				const existing = readStore();
+				const byId = new Map(existing.map(x => [x.id, x]));
+				for (const item of data) {
+					if (!item || typeof item !== 'object' || !item.id) continue;
+					byId.set(item.id, item);
+				}
+				writeStore(Array.from(byId.values()));
 			}
-			writeStore(Array.from(byId.values()));
 			render();
 			alert('Import complete.');
 		} catch (err) {
@@ -237,6 +299,50 @@
 
 	// Initial render
 	render();
+
+	// Optional Firebase auth/sync
+	if (window.firebaseService) {
+		signInBtn?.addEventListener('click', () => window.firebaseService.signIn());
+		signOutBtn?.addEventListener('click', () => window.firebaseService.signOut());
+		window.firebaseService.onAuthStateChanged(async (user) => {
+			if (user) {
+				useCloud = true;
+				signInBtn.style.display = 'none';
+				signOutBtn.style.display = '';
+				userLabel.textContent = user.email || user.displayName || '';
+				dataNote.textContent = 'Data sync is ON (private to your account).';
+
+				// Subscribe to cloud changes
+				window.firebaseService.subscribeEntries((items) => {
+					cloudItems = items || [];
+					emptyStateEl.style.display = cloudItems.length ? 'none' : 'block';
+					render();
+				});
+
+				// One-time suggestion to upload local entries if cloud empty
+				const local = readStore();
+				setTimeout(() => {
+					if (local.length && (!cloudItems || cloudItems.length === 0)) {
+						if (confirm('Upload your existing local entries to cloud?')) {
+							for (const it of local) window.firebaseService.upsertEntry(it);
+						}
+					}
+				}, 500);
+			} else {
+				useCloud = false;
+				signInBtn.style.display = '';
+				signOutBtn.style.display = 'none';
+				userLabel.textContent = '';
+				dataNote.textContent = 'Data is saved on this device only.';
+				render();
+			}
+		});
+	} else {
+		// Hide auth controls if firebase not configured
+		signInBtn?.style && (signInBtn.style.display = 'none');
+		signOutBtn?.style && (signOutBtn.style.display = 'none');
+		userLabel && (userLabel.textContent = '');
+	}
 
 	// Optional: register service worker when served over http(s)
 	if ('serviceWorker' in navigator) {
