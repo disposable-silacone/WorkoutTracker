@@ -2,12 +2,13 @@
 // Find your config in Firebase Console → Project settings → Your apps → SDK setup and configuration.
 
 export const firebaseConfig = {
-	apiKey: "YOUR_API_KEY",
-	authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-	projectId: "YOUR_PROJECT_ID",
-	storageBucket: "YOUR_PROJECT_ID.appspot.com",
-	messagingSenderId: "YOUR_SENDER_ID",
-	appId: "YOUR_APP_ID"
+	apiKey: "AIzaSyD-qHFOdSdDTKbpzlr4BkoYx8FxK5OMOyc",
+	authDomain: "workouttracker-9a541.firebaseapp.com",
+	projectId: "workouttracker-9a541",
+	storageBucket: "workouttracker-9a541.firebasestorage.app",
+	messagingSenderId: "331716107620",
+	appId: "1:331716107620:web:c320a2be9659152968ae71",
+	measurementId: "G-544HY6SQQB"
 };
 
 
