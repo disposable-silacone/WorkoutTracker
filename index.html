@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<title>Workout Tracker</title>
+	<link rel="stylesheet" href="style.css">
+	<link rel="manifest" href="manifest.webmanifest">
+	<meta name="theme-color" content="#0d9488">
+</head>
+<body>
+	<header class="app-header">
+		<h1>Workout Tracker</h1>
+	</header>
+
+	<main class="container">
+		<section class="card">
+			<h2>Log Workout</h2>
+			<form id="workout-form" autocomplete="off">
+				<div class="grid">
+					<label class="field">
+						<span>Date</span>
+						<input type="date" id="date" required>
+					</label>
+					<label class="field">
+						<span>Distance (miles)</span>
+						<input type="number" id="distance" step="0.01" min="0" inputmode="decimal" placeholder="e.g., 3.25" required>
+					</label>
+					<label class="field">
+						<span>Avg Pace (min:sec/mi)</span>
+						<input type="text" id="pace" inputmode="numeric" placeholder="e.g., 9:30/mi">
+					</label>
+					<label class="field">
+						<span>Pain start distance (mile)</span>
+						<input type="number" id="painStart" step="0.01" min="0" inputmode="decimal" placeholder="e.g., 1.50">
+					</label>
+					<label class="field">
+						<span>Pain level (0-10)</span>
+						<input type="range" id="painLevel" min="0" max="10" value="0">
+						<output id="painLevelValue" for="painLevel">0</output>
+					</label>
+					<label class="checkbox-field">
+						<input type="checkbox" id="stretched">
+						<span>Did I stretch?</span>
+					</label>
+					<label class="checkbox-field">
+						<input type="checkbox" id="exercised">
+						<span>Did I exercise (strength/PT)?</span>
+					</label>
+				</div>
+				<label class="field">
+					<span>Notes</span>
+					<textarea id="notes" rows="3" placeholder="Anything notable about pain, form, terrain, shoes, etc."></textarea>
+				</label>
+				<div class="actions">
+					<button type="submit" class="btn primary">Save Entry</button>
+					<button type="button" id="clearForm" class="btn">Clear</button>
+				</div>
+			</form>
+		</section>
+
+		<section class="card">
+			<div class="list-header">
+				<h2>Entries</h2>
+				<div class="list-actions">
+					<button type="button" id="exportBtn" class="btn">Export JSON</button>
+					<label class="btn file-btn">
+						<input type="file" id="importFile" accept="application/json">
+						<span>Import JSON</span>
+					</label>
+				</div>
+			</div>
+			<div id="emptyState" class="empty">No entries yet. Add your first workout above.</div>
+			<ul id="entries" class="entries"></ul>
+		</section>
+	</main>
+
+	<footer class="app-footer">
+		<small>Data is saved on this device only.</small>
+	</footer>
+
+	<script src="app.js"></script>
+</body>
+</html>
+
+

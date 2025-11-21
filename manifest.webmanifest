@@ -1,0 +1,19 @@
+{
+	"name": "Workout Tracker",
+	"short_name": "Workouts",
+	"description": "Log distance, pace, pain, stretching, and notes.",
+	"start_url": ".",
+	"display": "standalone",
+	"background_color": "#0b1320",
+	"theme_color": "#0d9488",
+	"icons": [
+		{
+			"src": "icons/logo.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		}
+	]
+}
+
+
